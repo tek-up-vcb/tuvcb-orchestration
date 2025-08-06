@@ -1,6 +1,6 @@
 # TUVCB Infrastructure Setup
 
-Ce repository contient la configuration d'infrastructure pour l'organisation **Stick-eth** utilisant Traefik comme reverse proxy et Consul pour la découverte de services.
+Ce repository contient la configuration d'infrastructure pour l'organisation **tek-up-vcb** utilisant Traefik comme reverse proxy et Consul pour la découverte de services.
 
 ## 🎯 Rôle du Repository
 
