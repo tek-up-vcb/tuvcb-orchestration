@@ -1,0 +1,15 @@
+{
+  "service": {
+    "name": "tuvcb-service-test",
+    "port": 3000,
+    "tags": [
+      "traefik.enable=true",
+      "traefik.http.routers.tuvcb-service-test.rule=Host(`tuvcb-service-test.localhost`)",
+      "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
+    ],
+    "check": {
+      "http": "http://tuvcb-service-test:3000/health",
+      "interval": "10s"
+    }
+  }
+}

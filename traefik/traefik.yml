@@ -1,0 +1,15 @@
+api:
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  consulCatalog:
+    endpoint:
+      address: "consul:8500"
+    exposedByDefault: false

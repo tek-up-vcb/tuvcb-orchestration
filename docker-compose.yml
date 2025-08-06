@@ -1,0 +1,55 @@
+services:
+  consul:
+    image: consul:1.15.4
+    command: agent -dev -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    networks:
+      - net
+
+  traefik:
+    image: traefik:v2.11
+    depends_on:
+      - consul
+    ports:
+      - "80:80"      # HTTP
+      - "8080:8080"  # Dashboard
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - //var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - net
+
+  tuvcb-front:
+    build: ./tuvcb-front
+    ports:
+      - "5173:5173"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.front.rule=Host(`app.localhost`)"
+      - "traefik.http.services.front.loadbalancer.server.port=5173"
+    depends_on:
+      - traefik
+    networks:
+      - net
+    environment:
+      - SERVICE_NAME=tuvcb-front
+
+  tuvcb-service-test:
+    build:
+      context: ./tuvcb-service-test
+    environment:
+      - SERVICE_NAME=tuvcb-service-test
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    networks:
+      - net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tuvcb-service-test.rule=Host(`api.localhost`)"
+      - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
+
+
+networks:
+  net:
+    driver: bridge
