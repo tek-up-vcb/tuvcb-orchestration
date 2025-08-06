@@ -57,7 +57,7 @@ L'infrastructure est composée de :
 
 4. **Configurer les hosts locaux**
    
-   Ajouter les entrées suivantes dans votre fichier `/etc/hosts` (Linux/Mac) ou `C:\Windows\System32\drivers\etc\hosts` (Windows) :
+   Ajouter les entrées suivantes dans votre fichier `/etc/hosts` (Linux/Mac) ou `C:\Windows\System32\drivers\etc\hosts` (Windows) (en tant qu'admin):
    ```
    127.0.0.1 app.localhost
    127.0.0.1 api1.localhost
@@ -108,16 +108,16 @@ labels:
 ## 📁 Structure du Repository
 
 ```
-tuvcb-front-guest/
-├── docker-compose.yml          # Orchestration complète
+tuvcb-orchestration/
+├── docker-compose.yml         # Orchestration complète
 ├── traefik/
 │   ├── traefik.yml            # Configuration Traefik
 │   └── acme.json              # Certificats SSL (dev)
 ├── consul/
 │   └── config/
 │       └── service-test.json  # Configuration service example
-├── frontend/                   # Service frontend React
-├── service-test/              # Service backend NestJS
+├── tuvcb-front/                  # Service frontend React
+├── tuvcb-service-test/              # Service backend NestJS
 └── README.md                  # Ce fichier
 ```
 
