@@ -1,0 +1,15 @@
+{
+  "service": {
+    "name": "tuvcb-service-auth",
+    "id": "tuvcb-service-auth",
+    "address": "tuvcb-service-auth",
+    "port": 3001,
+    "tags": ["auth", "metamask", "jwt"],
+    "check": {
+      "name": "Auth Service Health Check",
+      "http": "http://tuvcb-service-auth:3001/health",
+      "interval": "10s",
+      "timeout": "5s"
+    }
+  }
+}

@@ -157,3 +157,6 @@ typings/
 
 # TernJS port file
 .tern-port
+
+# All folders starting with tuvcb
+tuvcb*/
