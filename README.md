@@ -116,8 +116,8 @@ tuvcb-orchestration/
 ├── consul/
 │   └── config/
 │       └── service-test.json  # Configuration service example
-├── tuvcb-front/                  # Service frontend React
-├── tuvcb-service-test/              # Service backend NestJS
+├── tuvcb-front/               # Service frontend React
+├── tuvcb-service-test/        # Service backend NestJS
 └── README.md                  # Ce fichier
 ```
 
