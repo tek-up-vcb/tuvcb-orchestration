@@ -1,0 +1,23 @@
+http:
+  middlewares:
+    cors:
+      headers:
+        accessControlAllowOriginList:
+          - "http://app.localhost"
+        accessControlAllowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+          - "OPTIONS"
+        accessControlAllowHeaders:
+          - "Content-Type"
+          - "Authorization"
+        accessControlAllowCredentials: true
+        accessControlExposeHeaders:
+          - "Authorization"
+        addVaryHeader: true
+    strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"

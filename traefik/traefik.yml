@@ -13,3 +13,6 @@ providers:
     endpoint:
       address: "consul:8500"
     exposedByDefault: false
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
