@@ -36,21 +36,6 @@ services:
     environment:
       - SERVICE_NAME=tuvcb-front
 
-  tuvcb-service-test:
-    build:
-      context: ./tuvcb-service-test
-    environment:
-      - SERVICE_NAME=tuvcb-service-test
-      - CONSUL_HOST=consul
-      - CONSUL_PORT=8500
-    networks:
-      - net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.tuvcb-service-test.rule=Host(`app.localhost`) && PathPrefix(`/api/test`)"
-      - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
-      - "traefik.http.routers.tuvcb-service-test.middlewares=strip-api@file,cors@file"
-
   tuvcb-service-auth:
     build:
       context: ./tuvcb-service-auth
@@ -71,6 +56,21 @@ services:
       - "traefik.http.routers.tuvcb-service-auth.rule=Host(`app.localhost`) && PathPrefix(`/api/auth`)"
       - "traefik.http.services.tuvcb-service-auth.loadbalancer.server.port=3001"
       - "traefik.http.routers.tuvcb-service-auth.middlewares=strip-api@file,cors@file"
+
+  tuvcb-service-test:
+    build:
+      context: ./tuvcb-service-test
+    environment:
+      - SERVICE_NAME=tuvcb-service-test
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    networks:
+      - net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tuvcb-service-test.rule=Host(`app.localhost`) && PathPrefix(`/api/test`)"
+      - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
+      - "traefik.http.routers.tuvcb-service-test.middlewares=strip-api@file,cors@file"
 
   mongo:
     image: mongo:7
