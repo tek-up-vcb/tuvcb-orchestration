@@ -41,17 +41,15 @@ services:
       context: ./tuvcb-service-auth
     environment:
       - SERVICE_NAME=tuvcb-service-auth
-      - CONSUL_HOST=consul
-      - CONSUL_PORT=8500
-      - MONGODB_URI=mongodb://mongo:27017/tuvcb-auth
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - ALLOWED_USER=0xD498fd6BCd7D152319a3e822b83a9610710655eC
+      - JWT_EXPIRES_IN=24h
+      - PORT=3001
       - NODE_ENV=development
+      - ALLOWED_USER=0xD498fd6BCd7D152319a3e822b83a9610710655eC
     networks:
       - net
     depends_on:
-      - consul
-      - mongo
+      - traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tuvcb-service-auth.rule=Host(`app.localhost`) && PathPrefix(`/api/auth`)"
@@ -73,17 +71,7 @@ services:
       - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
       - "traefik.http.routers.tuvcb-service-test.middlewares=strip-api@file,cors@file"
 
-  mongo:
-    image: mongo:7
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - net
-
-volumes:
-  mongo_data:
+volumes: {}
 
 networks:
   net:
