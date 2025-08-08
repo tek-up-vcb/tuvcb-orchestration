@@ -17,6 +17,7 @@ services:
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - //var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     networks:
       - net
 
@@ -48,6 +49,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.tuvcb-service-test.rule=Host(`api.localhost`)"
       - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
+      - "traefik.http.routers.tuvcb-service-test.middlewares=cors@file"
 
   tuvcb-service-auth:
     build:
@@ -68,6 +70,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.tuvcb-service-auth.rule=Host(`auth.localhost`)"
       - "traefik.http.services.tuvcb-service-auth.loadbalancer.server.port=3001"
+      - "traefik.http.routers.tuvcb-service-auth.middlewares=cors@file"
 
   mongo:
     image: mongo:7
