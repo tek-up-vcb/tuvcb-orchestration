@@ -17,3 +17,7 @@ http:
         accessControlExposeHeaders:
           - "Authorization"
         addVaryHeader: true
+    strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"
