@@ -45,6 +45,7 @@ services:
       - CONSUL_PORT=8500
       - MONGODB_URI=mongodb://mongo:27017/tuvcb-auth
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - ALLOWED_USER=0xD498fd6BCd7D152319a3e822b83a9610710655eC
       - NODE_ENV=development
     networks:
       - net
