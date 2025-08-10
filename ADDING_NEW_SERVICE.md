@@ -250,45 +250,167 @@ curl http://localhost:8080/api/http/routers
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity()
-export class [EntityName] {
-  @ApiProperty()
+export enum UserRole {
+  ADMIN = 'Admin',
+  TEACHER = 'Teacher',
+  GUEST = 'Guest',
+}
+
+@Entity('users')
+export class User {
+  @ApiProperty({ description: 'ID unique de l\'utilisateur' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty()
-  @Column()
+  @ApiProperty({ description: 'Nom de famille' })
+  @Column({ length: 100 })
   nom: string;
 
-  @ApiProperty()
-  @CreateDateColumn()
-  createdAt: Date;
+  @ApiProperty({ description: 'Prénom' })
+  @Column({ length: 100 })
+  prenom: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Rôle de l\'utilisateur', enum: UserRole })
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.GUEST,
+  })
+  role: UserRole;
+
+  @ApiProperty({ description: 'Adresse Ethereum de l\'utilisateur' })
+  @Column({ unique: true, length: 42 })
+  walletAddress: string;
+
+  @ApiProperty({ description: 'Indique si l\'utilisateur est actif' })
+  @Column({ default: true })
+  isActive: boolean;
+
+  @ApiProperty({ description: 'Date de création' })
+  @CreateDateColumn()
+  dateCreation: Date;
+
+  @ApiProperty({ description: 'Date de dernière modification' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  dateModification: Date;
 }
 ```
 
-### 4.2 Créer les DTOs
+### 4.2 Initialisation de données par défaut
+
+Pour ajouter des données initiales à votre service, créez un service de seeding :
 
 ```typescript
-// create-[entity].dto.ts
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+// src/database/database-seeder.service.ts
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User, UserRole } from '../users/entities/user.entity';
 
-export class Create[Entity]Dto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  nom: string;
+@Injectable()
+export class DatabaseSeederService implements OnModuleInit {
+  private readonly logger = new Logger(DatabaseSeederService.name);
+
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async onModuleInit() {
+    await this.seedUsers();
+  }
+
+  async seedUsers() {
+    try {
+      this.logger.log('Vérification des utilisateurs par défaut...');
+
+      const defaultUsers = [
+        {
+          nom: 'Doe',
+          prenom: 'John',
+          role: UserRole.ADMIN,
+          walletAddress: '0x1234567890123456789012345678901234567890',
+        },
+        // Ajouter d'autres utilisateurs par défaut...
+      ];
+
+      for (const userData of defaultUsers) {
+        const existingUser = await this.userRepository.findOne({
+          where: { walletAddress: userData.walletAddress },
+        });
+
+        if (!existingUser) {
+          const user = this.userRepository.create(userData);
+          await this.userRepository.save(user);
+          this.logger.log(`Utilisateur créé: ${userData.prenom} ${userData.nom}`);
+        } else {
+          this.logger.log(`Utilisateur déjà existant: ${userData.prenom} ${userData.nom}`);
+        }
+      }
+
+      const totalUsers = await this.userRepository.count();
+      this.logger.log(`Nombre total d'utilisateurs: ${totalUsers}`);
+    } catch (error) {
+      this.logger.error('Erreur lors de l\'initialisation:', error);
+    }
+  }
 }
+```
 
-// update-[entity].dto.ts
-import { PartialType } from '@nestjs/swagger';
-import { Create[Entity]Dto } from './create-[entity].dto';
+Puis ajoutez-le au module principal :
 
-export class Update[Entity]Dto extends PartialType(Create[Entity]Dto) {}
+```typescript
+// app.module.ts
+import { DatabaseSeederService } from './database/database-seeder.service';
+import { User } from './users/entities/user.entity';
+
+@Module({
+  imports: [
+    // ... autres imports
+    TypeOrmModule.forFeature([User]),
+  ],
+  providers: [AppService, DatabaseSeederService],
+})
+export class AppModule {}
+```
+
+### 4.3 Script SQL d'initialisation (optionnel)
+
+Vous pouvez aussi créer un script SQL pour l'initialisation PostgreSQL :
+
+```sql
+-- postgres-init/01-init-[service].sql
+\c [database_name];
+
+CREATE TYPE IF NOT EXISTS users_role_enum AS ENUM('Admin', 'Teacher', 'Guest');
+
+CREATE TABLE IF NOT EXISTS "users" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    role users_role_enum DEFAULT 'Guest',
+    "walletAddress" VARCHAR(42) UNIQUE NOT NULL,
+    "isActive" BOOLEAN DEFAULT true,
+    "dateCreation" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "dateModification" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insertion conditionnelle de données
+INSERT INTO "users" (nom, prenom, role, "walletAddress")
+SELECT 'Doe', 'John', 'Admin', '0x1234567890123456789012345678901234567890'
+WHERE NOT EXISTS (
+    SELECT 1 FROM "users" WHERE "walletAddress" = '0x1234567890123456789012345678901234567890'
+);
+```
+
+Ajoutez le volume dans docker-compose.yml :
+
+```yaml
+postgres-[service]:
+  # ... configuration existante
+  volumes:
+    - postgres_[service]_data:/var/lib/postgresql/data
+    - ./postgres-init:/docker-entrypoint-initdb.d:ro
 ```
 
 ## Étape 5 : Intégrer au frontend
