@@ -90,11 +90,18 @@ services:
       - JWT_EXPIRES_IN=24h
       - PORT=3001
       - NODE_ENV=development
-      - ALLOWED_USER=0xD498fd6BCd7D152319a3e822b83a9610710655eC
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=tuvcb_user
+      - DB_PASSWORD=tuvcb_password
+      - DB_DATABASE=tuvcb_users
     networks:
       - net
     depends_on:
-      - traefik
+      postgres:
+        condition: service_healthy
+      traefik:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tuvcb-service-auth.rule=Host(`app.localhost`) && PathPrefix(`/api/auth`)"

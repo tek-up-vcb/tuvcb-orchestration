@@ -585,9 +585,45 @@ Pour toute question ou problème, consulter :
    - Route : `/api/users`
    - Base de données PostgreSQL dédiée
 
+4. **tuvcb-service-auth** (Port 3001) ⭐ **Mis à jour**
+   - Authentification Web3 avec MetaMask
+   - Route : `/api/auth`
+   - **Nouvelle fonctionnalité** : Authentification basée sur la base de données users
+   - Seules les adresses présentes dans la table `users` avec `isActive=true` peuvent se connecter
+   - Comparaison d'adresses case-insensitive pour la compatibilité
+   - JWT enrichi avec les informations utilisateur (nom, prénom, rôle)
+
 ### Prochains ports disponibles
 
 - **3004** : Disponible pour le prochain service
 - **5435** : Port PostgreSQL pour le prochain service
+
+## Authentification et sécurité
+
+### Configuration de l'authentification basée sur la base de données
+
+Le système d'authentification TUVCB utilise MetaMask pour l'authentification Web3, mais vérifie que l'adresse wallet est autorisée via la base de données users.
+
+#### Fonctionnement :
+1. **Génération de nonce** : L'utilisateur demande un nonce via `/api/auth/nonce`
+2. **Signature MetaMask** : L'utilisateur signe le message avec MetaMask
+3. **Vérification** : Le service auth vérifie la signature ET que l'adresse existe dans la table `users` avec `isActive=true`
+4. **JWT** : Si valide, un JWT est généré avec les informations utilisateur (nom, prénom, rôle)
+
+#### Configuration du service auth :
+```typescript
+// Variables d'environnement requises
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=tuvcb_user
+DB_PASSWORD=tuvcb_password
+DB_DATABASE=tuvcb_users
+```
+
+#### Points clés :
+- **Sécurité** : Seules les adresses en base de données peuvent se connecter
+- **Compatibilité** : Comparaison case-insensitive des adresses Ethereum
+- **Flexibilité** : Possibilité de désactiver un utilisateur via `isActive=false`
+- **Enrichissement** : JWT contient les informations utilisateur pour les autres services
 
 Cette documentation a été créée le 10 août 2025 et reflète l'état actuel de l'architecture TUVCB.
