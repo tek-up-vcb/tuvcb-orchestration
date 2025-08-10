@@ -47,6 +47,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.front.rule=Host(`app.localhost`)"
+      - "traefik.http.routers.front.priority=1000"
       - "traefik.http.services.front.loadbalancer.server.port=5173"
     depends_on:
       - traefik
@@ -76,8 +77,8 @@ services:
         condition: service_started
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.tuvcb-service-users.rule=Host(`app.localhost`) && PathPrefix(`/api/users`)"
-      - "traefik.http.routers.tuvcb-service-users.priority=2000"
+      - "traefik.http.routers.tuvcb-service-users.rule=Host(`app.localhost`) && (PathPrefix(`/api/users`) || PathPrefix(`/api/students`) || PathPrefix(`/api/promotions`))"
+      - "traefik.http.routers.tuvcb-service-users.priority=3000"
       - "traefik.http.services.tuvcb-service-users.loadbalancer.server.port=3002"
       - "traefik.http.routers.tuvcb-service-users.middlewares=cors@file"
 
@@ -105,7 +106,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tuvcb-service-auth.rule=Host(`app.localhost`) && PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.tuvcb-service-auth.priority=2000"
+      - "traefik.http.routers.tuvcb-service-auth.priority=3000"
       - "traefik.http.services.tuvcb-service-auth.loadbalancer.server.port=3001"
       - "traefik.http.routers.tuvcb-service-auth.middlewares=strip-api@file,cors@file"
 
