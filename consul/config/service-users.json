@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "tuvcb-service-users",
+    "tags": ["users", "api", "microservice"],
+    "port": 3002,
+    "check": {
+      "http": "http://tuvcb-service-users:3002/health",
+      "interval": "10s"
+    }
+  }
+}

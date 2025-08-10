@@ -1,23 +1,21 @@
-# TUVCB Infrastructure Setup
+# TUVCB - Plateforme Blockchain Décentralisée
 
-Ce repository contient la configuration d'infrastructure pour l'organisation **tek-up-vcb** utilisant Traefik comme reverse proxy et Consul pour la découverte de services.
+## Description
 
-## 🎯 Rôle du Repository (Configuration originale)
+TUVCB est une plateforme Web3 utilisant une architecture microservices avec authentification MetaMask et gestion complète des utilisateurs.
 
-Ce repository a pour objectif de :
-- **Configurer Traefik** comme reverse proxy pour router le trafic vers les différents services
-- **Déployer Consul** pour la découverte automatique des services
-- **Orchestrer l'architecture complète** via Docker Compose
-- **Fournir une base d'infrastructure** pour tous les services de l'organisation
+## �️ Architecture
 
-## 🏗️ Architecture
+### Services
+- **Frontend React** - Interface utilisateur moderne avec Vite
+- **Service Auth** - Authentification Web3 via MetaMask
+- **Service Users** ⭐ - Gestion CRUD des utilisateurs avec PostgreSQL
+- **Service Test** - Service de test et développement
 
-L'infrastructure est composée de :
-
-- **Traefik** : Reverse proxy et load balancer
-  - Dashboard accessible sur le port 8080
-  - Routing automatique basé sur les labels Docker
-  - Intégration avec Consul pour la découverte de services
+### Infrastructure
+- **Traefik** - Reverse proxy et load balancer
+- **Consul** - Service discovery et configuration
+- **PostgreSQL** ⭐ - Base de données relationnelle
 
 - **Consul** : Service discovery et configuration
   - Interface web sur le port 8500
