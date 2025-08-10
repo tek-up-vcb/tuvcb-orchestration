@@ -17,6 +17,12 @@ TUVCB est une plateforme Web3 utilisant une architecture microservices avec auth
 - **Consul** - Service discovery et configuration
 - **PostgreSQL** ⭐ - Base de données relationnelle
 
+## 📚 Documentation
+
+- **[Guide d'ajout de nouveaux services](./ADDING_NEW_SERVICE.md)** - Documentation complète pour ajouter un nouveau microservice à l'architecture
+
+## Infrastructure détaillée
+
 - **Consul** : Service discovery et configuration
   - Interface web sur le port 8500
   - Health checks automatiques

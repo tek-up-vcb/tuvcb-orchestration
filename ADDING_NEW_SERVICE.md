@@ -1,0 +1,471 @@
+# Guide : Ajouter un nouveau service à l'architecture TUVCB
+
+Ce guide détaille comment ajouter un nouveau service NestJS à l'architecture microservices existante avec Docker, Traefik et Consul.
+
+## Table des matières
+
+1. [Vue d'ensemble de l'architecture](#vue-densemble-de-larchitecture)
+2. [Prérequis](#prérequis)
+3. [Étape 1 : Créer le service NestJS](#étape-1--créer-le-service-nestjs)
+4. [Étape 2 : Configurer Docker](#étape-2--configurer-docker)
+5. [Étape 3 : Configurer Traefik](#étape-3--configurer-traefik)
+6. [Étape 4 : Ajouter la base de données (optionnel)](#étape-4--ajouter-la-base-de-données-optionnel)
+7. [Étape 5 : Intégrer au frontend](#étape-5--intégrer-au-frontend)
+8. [Étape 6 : Tester et déboguer](#étape-6--tester-et-déboguer)
+9. [Bonnes pratiques](#bonnes-pratiques)
+
+## Vue d'ensemble de l'architecture
+
+L'architecture TUVCB utilise :
+- **Frontend React** : Interface utilisateur avec Vite et Shadcn/ui
+- **Services NestJS** : API REST microservices
+- **PostgreSQL** : Base de données pour chaque service
+- **Traefik** : Reverse proxy et load balancer
+- **Consul** : Service discovery (configuré mais non utilisé actuellement)
+- **Docker Compose** : Orchestration des conteneurs
+
+## Prérequis
+
+- Docker et Docker Compose installés
+- Node.js 18+ pour le développement local
+- Connaissance de base de NestJS et TypeScript
+
+## Étape 1 : Créer le service NestJS
+
+### 1.1 Initialiser le projet
+
+```bash
+# Créer le répertoire du service
+mkdir tuvcb-service-[nom-du-service]
+cd tuvcb-service-[nom-du-service]
+
+# Initialiser le projet NestJS
+npm i -g @nestjs/cli
+nest new . --package-manager npm
+
+# Installer les dépendances essentielles
+npm install @nestjs/typeorm typeorm pg class-validator class-transformer @nestjs/swagger swagger-ui-express
+npm install -D @types/pg
+```
+
+### 1.2 Structure de fichiers recommandée
+
+```
+tuvcb-service-[nom]/
+├── src/
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   ├── main.ts
+│   └── [entity]/
+│       ├── [entity].controller.ts
+│       ├── [entity].service.ts
+│       ├── [entity].module.ts
+│       ├── entities/
+│       │   └── [entity].entity.ts
+│       └── dto/
+│           ├── create-[entity].dto.ts
+│           └── update-[entity].dto.ts
+├── Dockerfile
+├── package.json
+└── tsconfig.json
+```
+
+### 1.3 Configuration du main.ts
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // CORS configuration
+  app.enableCors({
+    origin: ['http://app.localhost', 'http://localhost:3000'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  // Global validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
+
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('[Service Name] API')
+    .setDescription('API pour la gestion des [entités]')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  const port = process.env.PORT || 3003;
+  await app.listen(port);
+  console.log(`[Service Name] service running on port ${port}`);
+}
+bootstrap();
+```
+
+### 1.4 Configuration de l'AppModule
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { [Entity]Module } from './[entity]/[entity].module';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT) || 5432,
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'password',
+      database: process.env.DB_DATABASE || 'service_db',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: process.env.NODE_ENV === 'development',
+      logging: process.env.NODE_ENV === 'development',
+    }),
+    [Entity]Module,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+## Étape 2 : Configurer Docker
+
+### 2.1 Créer le Dockerfile
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer les dépendances
+RUN npm ci --only=production
+
+# Copier le code source
+COPY . .
+
+# Build de l'application
+RUN npm run build
+
+# Exposer le port
+EXPOSE 3003
+
+# Commande de démarrage
+CMD ["npm", "run", "start:prod"]
+```
+
+### 2.2 Ajouter au docker-compose.yml
+
+```yaml
+  tuvcb-service-[nom]:
+    build:
+      context: ./tuvcb-service-[nom]
+    environment:
+      - SERVICE_NAME=tuvcb-service-[nom]
+      - PORT=3003
+      - NODE_ENV=development
+      - DB_HOST=postgres-[nom]
+      - DB_PORT=5432
+      - DB_USERNAME=tuvcb_[nom]
+      - DB_PASSWORD=tuvcb_password_[nom]
+      - DB_DATABASE=tuvcb_[nom]
+    networks:
+      - net
+    depends_on:
+      postgres-[nom]:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tuvcb-service-[nom].rule=Host(`app.localhost`) && PathPrefix(`/api/[nom]`)"
+      - "traefik.http.routers.tuvcb-service-[nom].priority=2000"
+      - "traefik.http.services.tuvcb-service-[nom].loadbalancer.server.port=3003"
+      - "traefik.http.routers.tuvcb-service-[nom].middlewares=cors@file"
+
+  postgres-[nom]:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: tuvcb_[nom]
+      POSTGRES_USER: tuvcb_[nom]
+      POSTGRES_PASSWORD: tuvcb_password_[nom]
+    volumes:
+      - postgres_[nom]_data:/var/lib/postgresql/data
+    networks:
+      - net
+    ports:
+      - "5434:5432"  # Port externe unique pour chaque service
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tuvcb_[nom] -d tuvcb_[nom]"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+### 2.3 Ajouter le volume dans docker-compose.yml
+
+```yaml
+volumes:
+  # ... volumes existants
+  postgres_[nom]_data:
+```
+
+## Étape 3 : Configurer Traefik
+
+### 3.1 Points importants pour le routage
+
+1. **Priorité** : Les routes API doivent avoir une priorité élevée (2000+) pour être traitées avant la route du frontend
+2. **PathPrefix** : Utiliser `/api/[nom-service]` pour éviter les conflits
+3. **Middleware CORS** : Ajouter `cors@file` pour les requêtes cross-origin
+4. **Port** : Spécifier le port exact du service dans les labels
+
+### 3.2 Vérifier les routes Traefik
+
+```bash
+# Vérifier que les routes sont correctement configurées
+curl http://localhost:8080/api/http/routers
+```
+
+## Étape 4 : Ajouter la base de données (optionnel)
+
+### 4.1 Créer une entité TypeORM
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+
+@Entity()
+export class [EntityName] {
+  @ApiProperty()
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ApiProperty()
+  @Column()
+  nom: string;
+
+  @ApiProperty()
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty()
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+```
+
+### 4.2 Créer les DTOs
+
+```typescript
+// create-[entity].dto.ts
+import { IsString, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class Create[Entity]Dto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  nom: string;
+}
+
+// update-[entity].dto.ts
+import { PartialType } from '@nestjs/swagger';
+import { Create[Entity]Dto } from './create-[entity].dto';
+
+export class Update[Entity]Dto extends PartialType(Create[Entity]Dto) {}
+```
+
+## Étape 5 : Intégrer au frontend
+
+### 5.1 Créer un service frontend
+
+```javascript
+// src/services/[nom]Service.js
+const API_BASE_URL = 'http://app.localhost/api/[nom]';
+
+export const [nom]Service = {
+  async getAll() {
+    const response = await fetch(`${API_BASE_URL}`);
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la récupération des [entités]: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async create(data) {
+    const response = await fetch(`${API_BASE_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la création: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async update(id, data) {
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la mise à jour: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async delete(id) {
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la suppression: ${response.statusText}`);
+    }
+    return response.ok;
+  },
+};
+```
+
+### 5.2 Ajouter la navigation (optionnel)
+
+```jsx
+// Dans le composant de navigation ou dashboard
+import { Link } from 'react-router-dom';
+
+<Link to="/manage-[entités]" className="nav-link">
+  Gérer les [entités]
+</Link>
+```
+
+## Étape 6 : Tester et déboguer
+
+### 6.1 Commandes de test
+
+```bash
+# Construire et démarrer le service
+docker-compose up -d --build tuvcb-service-[nom]
+
+# Vérifier les logs
+docker-compose logs -f tuvcb-service-[nom]
+
+# Tester l'API
+curl -X GET http://app.localhost/api/[nom]
+curl -X POST http://app.localhost/api/[nom] \
+  -H "Content-Type: application/json" \
+  -d '{"nom":"test"}'
+```
+
+### 6.2 Problèmes courants
+
+1. **Erreur 500 UUID** : Vérifier que les routes ne capturent pas les paramètres incorrects
+2. **Routes non trouvées** : Vérifier la priorité Traefik et l'ordre des routes
+3. **CORS** : S'assurer que le middleware CORS est configuré
+4. **Base de données** : Vérifier que les variables d'environnement sont correctes
+
+### 6.3 Debug des routes Traefik
+
+```bash
+# Voir toutes les routes configurées
+curl http://localhost:8080/api/http/routers | jq '.[].rule'
+
+# Vérifier les services
+curl http://localhost:8080/api/http/services
+```
+
+## Bonnes pratiques
+
+### 6.1 Nommage
+
+- Services : `tuvcb-service-[nom-descriptif]`
+- Base de données : `postgres-[nom-service]`
+- Routes : `/api/[nom-service]`
+- Ports : Incrémenter de 1 pour chaque nouveau service
+
+### 6.2 Sécurité
+
+- Utiliser des variables d'environnement pour les secrets
+- Valider toutes les entrées avec class-validator
+- Implémenter l'authentification si nécessaire
+
+### 6.3 Documentation
+
+- Configurer Swagger pour chaque service
+- Documenter les DTOs avec @ApiProperty
+- Maintenir ce guide à jour
+
+### 6.4 Tests
+
+```bash
+# Tester l'intégration complète
+npm run test:e2e
+
+# Tester les contrôleurs
+npm run test
+```
+
+## Exemple complet : Service "Products"
+
+Voici un exemple concret d'ajout d'un service de gestion de produits :
+
+1. **Nom du service** : `tuvcb-service-products`
+2. **Port** : 3004
+3. **Base de données** : `postgres-products` (port 5435)
+4. **Route** : `/api/products`
+5. **Entité** : Product avec nom, description, prix
+
+Cette structure garantit une architecture cohérente et évolutive pour l'ensemble du projet TUVCB.
+
+## Support
+
+Pour toute question ou problème, consulter :
+- Les logs Docker : `docker-compose logs [service-name]`
+- Dashboard Traefik : http://localhost:8080
+- Documentation Swagger de chaque service : http://app.localhost/api/[service]/docs
+
+## Historique des services
+
+### Services existants
+
+1. **tuvcb-service-auth** (Port 3001)
+   - Authentification Web3 avec MetaMask
+   - Route : `/api/auth`
+   - JWT et validation d'adresse Ethereum
+
+2. **tuvcb-service-test** (Port 3002)  
+   - Service de test et développement
+   - Route : `/api/test`
+   - Tests d'intégration
+
+3. **tuvcb-service-users** (Port 3003)
+   - Gestion CRUD des utilisateurs
+   - Route : `/api/users`
+   - Base de données PostgreSQL dédiée
+
+### Prochains ports disponibles
+
+- **3004** : Disponible pour le prochain service
+- **5435** : Port PostgreSQL pour le prochain service
+
+Cette documentation a été créée le 10 août 2025 et reflète l'état actuel de l'architecture TUVCB.
