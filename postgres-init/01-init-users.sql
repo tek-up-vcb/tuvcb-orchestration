@@ -43,18 +43,18 @@ CREATE TABLE IF NOT EXISTS diploma_requests (
 -- Diploma request signatures table
 CREATE TABLE IF NOT EXISTS diploma_request_signatures (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    diploma_request_id UUID NOT NULL REFERENCES diploma_requests(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL,
-    is_signed BOOLEAN DEFAULT false,
-    signed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    signature_comment TEXT
+    "diplomaRequestId" UUID NOT NULL REFERENCES diploma_requests(id) ON DELETE CASCADE,
+    "userId" VARCHAR(42) NOT NULL,
+    "isSigned" BOOLEAN DEFAULT false,
+    "signedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "signatureComment" TEXT
 );
 
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_diploma_requests_created_by ON diploma_requests(created_by);
 CREATE INDEX IF NOT EXISTS idx_diploma_requests_status ON diploma_requests(status);
-CREATE INDEX IF NOT EXISTS idx_diploma_signatures_request_id ON diploma_request_signatures(diploma_request_id);
-CREATE INDEX IF NOT EXISTS idx_diploma_signatures_user_id ON diploma_request_signatures(user_id);
+CREATE INDEX IF NOT EXISTS idx_diploma_signatures_request_id ON diploma_request_signatures("diplomaRequestId");
+CREATE INDEX IF NOT EXISTS idx_diploma_signatures_user_id ON diploma_request_signatures("userId");
 
 -- Insert some sample diplomas
 INSERT INTO diplomas (name, description, level, field) VALUES
