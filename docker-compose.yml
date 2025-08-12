@@ -10,7 +10,7 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: tuvcb_users
+      POSTGRES_DB: tuvcb_main
       POSTGRES_USER: tuvcb_user
       POSTGRES_PASSWORD: tuvcb_password
     ports:
@@ -21,7 +21,7 @@ services:
     networks:
       - net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tuvcb_user -d tuvcb_users"]
+      test: ["CMD-SHELL", "pg_isready -U tuvcb_user -d tuvcb_main"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,7 +67,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=tuvcb_user
       - DB_PASSWORD=tuvcb_password
-      - DB_DATABASE=tuvcb_users
+      - DB_DATABASE=tuvcb_main
     networks:
       - net
     depends_on:
@@ -95,7 +95,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=tuvcb_user
       - DB_PASSWORD=tuvcb_password
-      - DB_DATABASE=tuvcb_users
+      - DB_DATABASE=tuvcb_main
     networks:
       - net
     depends_on:
@@ -124,6 +124,32 @@ services:
       - "traefik.http.routers.tuvcb-service-test.rule=Host(`app.localhost`) && PathPrefix(`/api/test`)"
       - "traefik.http.services.tuvcb-service-test.loadbalancer.server.port=3000"
       - "traefik.http.routers.tuvcb-service-test.middlewares=strip-api@file,cors@file"
+
+  tuvcb-service-diploma:
+    build:
+      context: ./tuvcb-service-diploma
+    environment:
+      - SERVICE_NAME=tuvcb-service-diploma
+      - PORT=3003
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=tuvcb_user
+      - DB_PASSWORD=tuvcb_password
+      - DB_DATABASE=tuvcb_main
+    networks:
+      - net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tuvcb-service-diploma.rule=Host(`app.localhost`) && PathPrefix(`/api/diplomas`)"
+      - "traefik.http.routers.tuvcb-service-diploma.priority=3000"
+      - "traefik.http.services.tuvcb-service-diploma.loadbalancer.server.port=3003"
+      - "traefik.http.routers.tuvcb-service-diploma.middlewares=strip-api@file,cors@file"
 
 volumes: 
   postgres_data:
