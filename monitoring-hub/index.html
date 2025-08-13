@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUVCB - Hub de Monitoring</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .monitoring-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .monitoring-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        
+        .card-description {
+            margin-bottom: 20px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        
+        .card-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .btn-primary {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            background: #00a8cc;
+            border-color: #00a8cc;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        
+        .status-offline {
+            background: #f44336;
+            box-shadow: 0 0 10px #f44336;
+        }
+        
+        .quick-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .stat-label {
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .monitoring-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 TUVCB Monitoring Hub</h1>
+            <p class="subtitle">Plateforme de surveillance et monitoring en temps réel</p>
+        </header>
+        
+        <div class="quick-stats">
+            <h3 style="margin-bottom: 15px;">📊 Statistiques en temps réel</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="services-count">-</div>
+                    <div class="stat-label">Services actifs</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="response-time">-</div>
+                    <div class="stat-label">Temps de réponse</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="requests-count">-</div>
+                    <div class="stat-label">Requêtes/min</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="uptime">-</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="monitoring-grid">
+            <!-- Traefik Dashboard -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">🚦</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            Traefik Dashboard
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Reverse proxy et load balancer. Visualisez le routage des requêtes, les services backend et les métriques de trafic.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:8080" class="btn btn-primary" target="_blank">Dashboard</a>
+                    <a href="http://localhost:8080/api/rawdata" class="btn" target="_blank">API</a>
+                </div>
+            </div>
+            
+            <!-- Grafana -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            Grafana
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Dashboards visuels et alertes. Créez des graphiques personnalisés pour surveiller vos métriques.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:3001" class="btn btn-primary" target="_blank">Dashboards</a>
+                    <a href="http://localhost:3001/login" class="btn" target="_blank">Login</a>
+                </div>
+            </div>
+            
+            <!-- Prometheus -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            Prometheus
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Base de données de métriques. Collecte et stocke toutes les données de performance de vos services.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:9090" class="btn btn-primary" target="_blank">Queries</a>
+                    <a href="http://localhost:9090/targets" class="btn" target="_blank">Targets</a>
+                    <a href="http://localhost:9090/config" class="btn" target="_blank">Config</a>
+                </div>
+            </div>
+            
+            <!-- Consul -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">🔍</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            Consul
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Service discovery et configuration. Gérez l'enregistrement et la découverte de vos microservices.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:8500" class="btn btn-primary" target="_blank">UI</a>
+                    <a href="http://localhost:8500/v1/status/leader" class="btn" target="_blank">API</a>
+                </div>
+            </div>
+            
+            <!-- Node Exporter -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">💻</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            Node Exporter
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Métriques système. Surveillez CPU, RAM, disque et réseau de votre serveur.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:9100" class="btn btn-primary" target="_blank">Metrics</a>
+                    <a href="http://localhost:9100/metrics" class="btn" target="_blank">Raw Data</a>
+                </div>
+            </div>
+            
+            <!-- cAdvisor -->
+            <div class="monitoring-card">
+                <div class="card-header">
+                    <div class="card-icon">🐳</div>
+                    <div>
+                        <div class="card-title">
+                            <span class="status-indicator status-online"></span>
+                            cAdvisor
+                        </div>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Métriques conteneurs. Analysez l'utilisation des ressources de vos conteneurs Docker.
+                </div>
+                <div class="card-links">
+                    <a href="http://localhost:8081" class="btn btn-primary" target="_blank">Dashboard</a>
+                    <a href="http://localhost:8081/containers/" class="btn" target="_blank">Containers</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Applications -->
+        <div style="margin-top: 40px;">
+            <h2 style="margin-bottom: 20px;">🌐 Applications TUVCB</h2>
+            <div class="monitoring-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="monitoring-card">
+                    <div class="card-header">
+                        <div class="card-icon">🎨</div>
+                        <div class="card-title">Frontend React</div>
+                    </div>
+                    <div class="card-links">
+                        <a href="http://app.localhost" class="btn btn-primary" target="_blank">Application</a>
+                        <a href="http://localhost:5173" class="btn" target="_blank">Dev Server</a>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-header">
+                        <div class="card-icon">🔐</div>
+                        <div class="card-title">Service Auth</div>
+                    </div>
+                    <div class="card-links">
+                        <a href="http://app.localhost/api/auth" class="btn btn-primary" target="_blank">API</a>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-header">
+                        <div class="card-icon">👥</div>
+                        <div class="card-title">Service Users</div>
+                    </div>
+                    <div class="card-links">
+                        <a href="http://app.localhost/api/users" class="btn btn-primary" target="_blank">API</a>
+                    </div>
+                </div>
+                
+                <div class="monitoring-card">
+                    <div class="card-header">
+                        <div class="card-icon">🎓</div>
+                        <div class="card-title">Service Diploma</div>
+                    </div>
+                    <div class="card-links">
+                        <a href="http://app.localhost/api/diplomas" class="btn btn-primary" target="_blank">API</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>🚀 TUVCB Platform - Monitoring Hub | Dernière mise à jour: <span id="last-update"></span></p>
+        </footer>
+    </div>
+    
+    <script>
+        // Mise à jour de l'heure
+        function updateTime() {
+            document.getElementById('last-update').textContent = new Date().toLocaleString('fr-FR');
+        }
+        
+        // Simulation de données (dans un vrai projet, ces données viendraient de Prometheus)
+        function updateStats() {
+            document.getElementById('services-count').textContent = '12';
+            document.getElementById('response-time').textContent = '145ms';
+            document.getElementById('requests-count').textContent = '1.2k';
+            document.getElementById('uptime').textContent = '99.8%';
+        }
+        
+        // Vérification du statut des services (simulation)
+        function checkServiceStatus() {
+            // Dans un vrai projet, ceci ferait des appels API aux services
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                indicator.className = 'status-indicator status-online';
+            });
+        }
+        
+        // Initialisation
+        updateTime();
+        updateStats();
+        checkServiceStatus();
+        
+        // Mise à jour périodique
+        setInterval(updateTime, 1000);
+        setInterval(updateStats, 30000);
+        setInterval(checkServiceStatus, 60000);
+    </script>
+</body>
+</html>

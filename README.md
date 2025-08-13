@@ -16,10 +16,14 @@ TUVCB est une plateforme Web3 utilisant une architecture microservices avec auth
 - **Traefik** - Reverse proxy et load balancer
 - **Consul** - Service discovery et configuration
 - **PostgreSQL** ⭐ - Base de données relationnelle
+- **Prometheus** 📊 - Collecte de métriques et monitoring
+- **Grafana** 📈 - Dashboards et visualisation des données
 
 ## 📚 Documentation
 
 - **[Guide d'ajout de nouveaux services](./ADDING_NEW_SERVICE.md)** - Documentation complète pour ajouter un nouveau microservice à l'architecture
+- **[📊 Guide Monitoring Complet](./MONITORING_GUIDE.md)** - Tout savoir sur Prometheus et Grafana
+- **[⚡ Quick Start Monitoring](./MONITORING_QUICKSTART.md)** - Démarrage rapide en 5 minutes
 
 ## Infrastructure détaillée
 
@@ -66,6 +70,8 @@ TUVCB est une plateforme Web3 utilisant une architecture microservices avec auth
    127.0.0.1 app.localhost
    127.0.0.1 api1.localhost
    127.0.0.1 api2.localhost
+   127.0.0.1 traefik.localhost
+   127.0.0.1 monitoring.localhost
    ```
 
 5. **Vérifier le déploiement**
@@ -81,9 +87,26 @@ Le `docker-compose.yml` configure automatiquement :
 - **Consul** : `http://localhost:8500`
 - **Traefik Dashboard** : `http://localhost:8080`
 
+### 📊 Monitoring Stack
+- **Prometheus** : `http://localhost:9090` - Collecte de métriques
+- **Grafana** : `http://localhost:3001` - Dashboards visuels (admin/admin)
+- **Node Exporter** : `http://localhost:9100` - Métriques système
+- **cAdvisor** : `http://localhost:8081` - Métriques conteneurs
+
 ### Services Applicatifs
 - **Frontend** : `http://app.localhost` (port 5173)
 - **Service-test** : `http://api.localhost` (port 3000)
+
+### 🎯 Démarrage rapide monitoring
+```bash
+# Démarrer avec monitoring
+.\start-monitoring.ps1
+
+# Ou démarrage standard
+docker-compose up -d
+```
+
+**📊 Premier dashboard** : Importez le dashboard Traefik (ID: 4475) dans Grafana pour voir vos métriques immédiatement !
 
 ## 🔧 Configuration
 

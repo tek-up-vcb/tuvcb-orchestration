@@ -21,3 +21,116 @@ http:
       stripPrefix:
         prefixes:
           - "/api"
+    
+    # Rate limiting pour la protection
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1m
+    
+    # Retry automatique
+    retry:
+      retry:
+        attempts: 3
+        initialInterval: 100ms
+    
+    # Circuit breaker
+    circuit-breaker:
+      circuitBreaker:
+        expression: "NetworkErrorRatio() > 0.3 || ResponseCodeRatio(500, 600, 0, 600) > 0.3"
+        checkPeriod: 10s
+        fallbackDuration: 30s
+        recoveryDuration: 10s
+    
+    # Compression pour optimiser les performances
+    compression:
+      compress: {}
+    
+    # Headers de sécurité
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+    
+    # Authentification basique pour services admin
+    auth-admin:
+      basicAuth:
+        users:
+          - "admin:$2y$10$..."  # Générez un hash bcrypt
+
+  # Services de monitoring
+  services:
+    # Service pour la page d'accueil monitoring
+    monitoring-hub:
+      loadBalancer:
+        servers:
+          - url: "http://monitoring-hub:3000"
+    
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://prometheus:9090"
+    
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://grafana:3000"
+    
+    consul:
+      loadBalancer:
+        servers:
+          - url: "http://consul:8500"
+    
+    cadvisor:
+      loadBalancer:
+        servers:
+          - url: "http://cadvisor:8080"
+
+  # Routes pour le monitoring
+  routers:
+    # Page d'accueil monitoring avec liens
+    monitoring-hub:
+      rule: "Host(`monitoring.localhost`)"
+      service: "monitoring-hub"
+      middlewares:
+        - "cors"
+    
+    prometheus:
+      rule: "Host(`monitoring.localhost`) && PathPrefix(`/prometheus`)"
+      service: "prometheus"
+      middlewares:
+        - "cors"
+    
+    grafana:
+      rule: "Host(`monitoring.localhost`) && PathPrefix(`/grafana`)"
+      service: "grafana"
+      middlewares:
+        - "cors"
+    
+    # Route pour les métriques Traefik
+    traefik-metrics:
+      rule: "Host(`monitoring.localhost`) && PathPrefix(`/metrics`)"
+      service: "api@internal"
+    
+    # Route vers Consul
+    consul-redirect:
+      rule: "Host(`monitoring.localhost`) && PathPrefix(`/consul`)"
+      service: "consul"
+      middlewares:
+        - "cors"
+    
+    # Route vers cAdvisor
+    cadvisor-redirect:
+      rule: "Host(`monitoring.localhost`) && PathPrefix(`/cadvisor`)"
+      service: "cadvisor"
+      middlewares:
+        - "cors"
