@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS diploma_requests (
 CREATE TABLE IF NOT EXISTS diploma_request_signatures (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "diplomaRequestId" UUID NOT NULL REFERENCES diploma_requests(id) ON DELETE CASCADE,
-    "userId" VARCHAR(42) NOT NULL,
+    "userId" UUID NOT NULL,
     "isSigned" BOOLEAN DEFAULT false,
     "signedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "signatureComment" TEXT
