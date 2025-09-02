@@ -1,0 +1,21 @@
+{
+  "service": {
+    "name": "tuvcb-blockchain",
+    "id": "tuvcb-blockchain",
+    "address": "tuvcb-blockchain",
+    "port": 3000,
+    "tags": [
+      "blockchain",
+      "events",
+      "traefik.enable=true",
+      "traefik.http.routers.tuvcb-blockchain.rule=Host(`app.localhost`) && PathPrefix(`/api/blockchain`)",
+      "traefik.http.routers.tuvcb-blockchain.middlewares=strip-api@file,cors@file",
+      "traefik.http.services.tuvcb-blockchain.loadbalancer.server.port=3000"
+    ],
+    "check": {
+      "http": "http://tuvcb-blockchain:3000/health",
+      "interval": "15s",
+      "timeout": "5s"
+    }
+  }
+}

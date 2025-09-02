@@ -225,6 +225,45 @@ services:
       - "traefik.http.services.tuvcb-service-diploma.loadbalancer.server.port=3003"
       - "traefik.http.routers.tuvcb-service-diploma.middlewares=strip-api@file,cors@file"
 
+  tuvcb-blockchain:
+    build:
+      context: ./tuvcb-blockchain
+    environment:
+      - SERVICE_NAME=tuvcb-blockchain
+      - PORT=3000
+      - RPC_URL=http://hardhat-node:8545
+      - PRIVATE_KEY=0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    networks:
+      - net
+    depends_on:
+      traefik:
+        condition: service_started
+      hardhat-node:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tuvcb-blockchain.rule=Host(`app.localhost`) && PathPrefix(`/api/blockchain`)"
+      - "traefik.http.routers.tuvcb-blockchain.priority=3000"
+      - "traefik.http.services.tuvcb-blockchain.loadbalancer.server.port=3000"
+      - "traefik.http.routers.tuvcb-blockchain.middlewares=strip-api@file,cors@file"
+
+  hardhat-node:
+    build:
+      context: ./tuvcb-blockchain
+      target: build
+    command: npx hardhat node --hostname 0.0.0.0
+    ports:
+      - "8545:8545"
+    networks:
+      - net
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8545').then(r=>r.ok?0:process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
 volumes: 
   postgres_data:
   prometheus_data:
