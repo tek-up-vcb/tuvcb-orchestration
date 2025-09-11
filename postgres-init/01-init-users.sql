@@ -125,7 +125,7 @@ BEGIN
         'Hamlil-Benard',
         'Timéo',
         'Admin'::users_role_enum, 
-        '0xF54Be8cf7076A7C1222B39bf5Ee329aB4695CAB5'
+        '0x4c7CD549193a9Fd535062Ea5E7978C784d07Ea20'
     );
     
     RAISE NOTICE 'Initialisation des utilisateurs terminée.';
