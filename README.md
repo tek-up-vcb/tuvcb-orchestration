@@ -1,228 +1,196 @@
 # TUVCB - Plateforme Blockchain Décentralisée
 
-## Description
+## Présentation
 
-TUVCB est une plateforme Web3 utilisant une architecture microservices avec authentification MetaMask et gestion complète des utilisateurs.
+Ce dépôt configure l’infrastructure de la plateforme Web3 **TUVCB**. Il se compose d’un ensemble de conteneurs Docker définis dans `docker-compose.yml`. Les conteneurs déployés incluent :
 
-## �️ Architecture
+- un **frontend React** pour l’interface utilisateur,
+- un service **Auth** pour l’authentification MetaMask,
+- un service **Users** pour la gestion CRUD des utilisateurs et étudiants,
+- un service **Diplomas** pour les modèles et demandes de diplômes,
+- un micro-service **Blockchain** pour interagir avec le contrat `DiplomaRegistry`,
+- les composants d’infrastructure : base de données PostgreSQL, service discovery **Consul**, reverse proxy **Traefik**, et la stack de monitoring **Prometheus/Grafana**.
 
-### Services
-- **Frontend React** - Interface utilisateur moderne avec Vite
-- **Service Auth** - Authentification Web3 via MetaMask
-- **Service Users** ⭐ - Gestion CRUD des utilisateurs avec PostgreSQL
-- **Service Test** - Service de test et développement
+Cette orchestration fournit donc un socle complet permettant à l’ensemble de la plateforme de fonctionner de manière cohérente.
 
-### Infrastructure
-- **Traefik** - Reverse proxy et load balancer
-- **Consul** - Service discovery et configuration
-- **PostgreSQL** ⭐ - Base de données relationnelle
-- **Prometheus** 📊 - Collecte de métriques et monitoring
-- **Grafana** 📈 - Dashboards et visualisation des données
+## Prérequis
 
-## 📚 Documentation
+- [Docker](https://docs.docker.com/get-docker/) et Docker Compose installés.
+- Git configuré avec accès aux dépôts de l’organisation.
+- Système permettant de modifier le fichier `etc/hosts` (ou `C:\\Windows\\System32\\drivers\\etc\\hosts` sous Windows).
 
-- **[Guide d'ajout de nouveaux services](./ADDING_NEW_SERVICE.md)** - Documentation complète pour ajouter un nouveau microservice à l'architecture
-- **[📊 Guide Monitoring Complet](./MONITORING_GUIDE.md)** - Tout savoir sur Prometheus et Grafana
-- **[⚡ Quick Start Monitoring](./MONITORING_QUICKSTART.md)** - Démarrage rapide en 5 minutes
+## Installation
 
-## Infrastructure détaillée
+1. **Cloner le dépôt d’orchestration** :
 
-- **Consul** : Service discovery et configuration
-  - Interface web sur le port 8500
-  - Health checks automatiques
-  - Configuration centralisée des services
-
-- **Services applicatifs** : Clonés depuis l'organisation GitHub
-  - Chaque service est configuré avec les labels Traefik appropriés
-  - Enregistrement automatique dans Consul
-
-## 🚀 Installation et Setup
-
-### Prérequis
-- Docker et Docker Compose installés
-- Git configuré avec accès à l'organisation **Stick-eth**
-
-### Étapes d'installation
-
-1. **Cloner ce repository d'infrastructure**
    ```bash
-   https://github.com/tek-up-vcb/tuvcb-orchestration
+   git clone https://github.com/tek-up-vcb/tuvcb-orchestration
    cd tuvcb-orchestration
    ```
 
-2. **Cloner tous les repositories de l'organisation à la racine**
+2. **Cloner les services applicatifs**  
+   Placez-vous dans le répertoire racine et clonez chaque dépôt. Dans l’exemple ci-dessous on clone le front et les micro-services ; adaptez selon les dépôts réellement utilisés :
+
    ```bash
-   git clone https://github.com/Stick-eth/tuvcb-front.git
-   git clone https://github.com/Stick-eth/backend-api.git
-   git clone https://github.com/Stick-eth/service-auth.git
-   # ... autres services de l'organisation
+   git clone https://github.com/tek-up-vcb/tuvcb-front.git
+   git clone https://github.com/tek-up-vcb/tuvcb-service-auth.git
+   git clone https://github.com/tek-up-vcb/tuvcb-service-users.git
+   git clone https://github.com/tek-up-vcb/tuvcb-service-diploma.git
+   git clone https://github.com/tek-up-vcb/tuvcb-blockchain.git
    ```
 
-3. **Lancer l'infrastructure complète**
-   ```bash
-   docker-compose up -d
-   ```
+3. **Configurer le fichier hosts**  
+   Pour profiter des sous-domaines utilisés par Traefik, ajoutez les lignes suivantes à votre fichier `hosts` (en privilège administrateur) :
 
-4. **Configurer les hosts locaux**
-   
-   Ajouter les entrées suivantes dans votre fichier `/etc/hosts` (Linux/Mac) ou `C:\Windows\System32\drivers\etc\hosts` (Windows) (en tant qu'admin):
    ```
    127.0.0.1 app.localhost
-   127.0.0.1 api1.localhost
-   127.0.0.1 api2.localhost
    127.0.0.1 traefik.localhost
    127.0.0.1 monitoring.localhost
    ```
 
-5. **Vérifier le déploiement**
+4. **Lancer l’infrastructure**  
+   Démarrez tous les conteneurs en arrière-plan :
+
+   ```bash
+   docker-compose up -d
+   ```
+
+5. **Vérifier le déploiement** :
+
    ```bash
    docker-compose ps
    ```
 
-## 📋 Services Configurés
+## Services exposés
 
-Le `docker-compose.yml` configure automatiquement :
+Les principaux services sont exposés via **Traefik** et accessibles via des sous-domaines locaux. Le tableau ci-dessous résume les rôles et ports :
 
-### Infrastructure
-- **Consul** : `http://localhost:8500`
-- **Traefik Dashboard** : `http://localhost:8080`
+| Service            | Sous-domaine / Port                                         | Rôle                                  |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------- |
+| Traefik dashboard  | `traefik.localhost` (8080)                                  | configuration et état du proxy        |
+| Consul             | `http://localhost:8500`                                     | découverte de services et KV store    |
+| PostgreSQL         | `localhost:5432`                                            | base de données partagée              |
+| Frontend (React)   | `app.localhost` (5173)                                      | interface utilisateur                 |
+| Auth service       | routé sous `/api/auth`                                      | authentification Web3                 |
+| Users service      | routé sous `/api/users`, `/api/students`, `/api/promotions` | gestion des utilisateurs et étudiants |
+| Diploma service    | routé sous `/api/diplomas`                                  | modèles et demandes de diplômes       |
+| Blockchain service | routé sous `/api/blockchain`                                | interaction avec le smart-contract    |
+| Prometheus         | `monitoring.localhost/prometheus` (9090)                    | collecte des métriques                |
+| Grafana            | `monitoring.localhost/grafana` (3001)                       | tableaux de bord (admin/admin)        |
+| Node Exporter      | `http://localhost:9100`                                     | métriques système                     |
+| cAdvisor           | `http://localhost:8081`                                     | métriques des conteneurs              |
 
-### 📊 Monitoring Stack
-- **Prometheus** : `http://localhost:9090` - Collecte de métriques
-- **Grafana** : `http://localhost:3001` - Dashboards visuels (admin/admin)
-- **Node Exporter** : `http://localhost:9100` - Métriques système
-- **cAdvisor** : `http://localhost:8081` - Métriques conteneurs
+## Configuration des services applicatifs
 
-### Services Applicatifs
-- **Frontend** : `http://app.localhost` (port 5173)
-- **Service-test** : `http://api.localhost` (port 3000)
+Chaque micro-service est paramétré via des variables d’environnement définies dans `docker-compose.yml`. Pour un déploiement personnalisé, créez un fichier `.env` et surcharger les valeurs suivantes :
 
-### 🎯 Démarrage rapide monitoring
+### Base de données
+
+```env
+POSTGRES_DB=tuvcb_main
+POSTGRES_USER=tuvcb_user
+POSTGRES_PASSWORD=tuvcb_password
+```
+
+Ces variables sont utilisées par le conteneur `postgres`.
+
+### Users service (port 3002)
+
+```env
+PORT=3002
+NODE_ENV=development
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=tuvcb_user
+DB_PASSWORD=tuvcb_password
+DB_DATABASE=tuvcb_main
+```
+
+Ce service est exposé via Traefik avec la règle :
+
+```
+Host(`app.localhost`) && (PathPrefix(`/api/users`) || PathPrefix(`/api/students`) || PathPrefix(`/api/promotions`))
+```
+
+### Auth service (port 3001)
+
+```env
+PORT=3001
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=24h
+NODE_ENV=development
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=tuvcb_user
+DB_PASSWORD=tuvcb_password
+DB_DATABASE=tuvcb_main
+```
+
+Le service est routé sous `/api/auth`.
+
+### Diploma service (port 3003)
+
+```env
+PORT=3003
+NODE_ENV=development
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=tuvcb_user
+DB_PASSWORD=tuvcb_password
+DB_DATABASE=tuvcb_main
+```
+
+Routé sous `/api/diplomas`.
+
+### Blockchain service (port 3000)
+
+```env
+PORT=3000
+RPC_URL=http://hardhat-node:8545
+PRIVATE_KEY=0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+
+Routé sous `/api/blockchain`. Ce service dépend d’un nœud Hardhat local exposé sur 8545.
+
+## Supervision et monitoring
+
+La plateforme fournit une stack de monitoring complète :
+
+- **Prometheus** collecte les métriques des services et des conteneurs. Elle est accessible via `monitoring.localhost/prometheus`.
+- **Grafana** affiche des tableaux de bord ; la page se trouve sur `monitoring.localhost/grafana` et l’accès initial se fait avec le couple `admin/admin`.
+- **Node Exporter** et **cAdvisor** exposent les métriques système et conteneur qui sont récupérées par Prometheus.
+- Un script `start-monitoring.ps1` permet de lancer uniquement la stack de monitoring.
+
+## Commandes utiles
+
+Quelques commandes pour gérer l’infrastructure :
+
 ```bash
-# Démarrer avec monitoring
-.\start-monitoring.ps1
-
-# Ou démarrage standard
-docker-compose up -d
+docker-compose up -d               # démarrer l’ensemble
+docker-compose restart <service>   # redémarrer un service
+docker-compose ps                  # voir l’état des services
+docker-compose logs -f <service>   # suivre les logs d’un service
+docker-compose up -d --build       # reconstruire les images et redémarrer
 ```
 
-**📊 Premier dashboard** : Importez le dashboard Traefik (ID: 4475) dans Grafana pour voir vos métriques immédiatement !
+## Ajout de nouveaux services
 
-## 🔧 Configuration
+Pour ajouter un micro-service à cette architecture :
 
-### Traefik (`traefik/traefik.yml`)
-- Point d'entrée HTTP sur le port 80
-- Provider Docker pour la découverte automatique
-- Provider Consul Catalog pour la configuration dynamique
-- API insecure activée pour le développement
+1. Clonez le service dans la racine du dépôt.
+2. Assurez-vous qu’il expose un port interne et définissez les variables d’environnement nécessaires.
+3. Ajoutez des labels Traefik pour le routing, par exemple :
 
-### Consul (`consul/config/`)
-- Configuration des services avec health checks
-- Tags Traefik pour le routing automatique
-- Surveillance des endpoints de santé
+   ```yaml
+   labels:
+     - "traefik.enable=true"
+     - "traefik.http.routers.service-name.rule=Host(`subdomain.localhost`)"
+     - "traefik.http.services.service-name.loadbalancer.server.port=PORT"
+   ```
 
-## 🌐 Routing des Services
+4. Déclarez éventuellement le service dans Consul (`consul/config/`) pour les health checks et la configuration dynamique.
 
-Les services sont automatiquement routés via Traefik grâce aux labels Docker :
-
-```yaml
-labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.service-name.rule=Host(`subdomain.localhost`)"
-  - "traefik.http.services.service-name.loadbalancer.server.port=PORT"
-```
-
-## 📁 Structure du Repository
-
-```
-tuvcb-orchestration/
-├── docker-compose.yml         # Orchestration complète
-├── traefik/
-│   ├── traefik.yml            # Configuration Traefik
-│   └── acme.json              # Certificats SSL (dev)
-├── consul/
-│   └── config/
-│       └── service-test.json  # Configuration service example
-├── tuvcb-front/               # Service frontend React
-├── tuvcb-service-test/        # Service backend NestJS
-└── README.md                  # Ce fichier
-```
-
-## 🔍 Monitoring et Debug
-
-### Tableaux de bord
-- **Traefik Dashboard** : http://localhost:8080
-  - Visualisation des routes actives
-  - État des services backend
-  - Métriques de trafic
-
-- **Consul UI** : http://localhost:8500
-  - Services enregistrés
-  - Health checks en temps réel
-  - Configuration key-value
-
-### Logs
-```bash
-# Logs de l'infrastructure
-docker-compose logs traefik consul
-
-# Logs de tous les services
-docker-compose logs -f
-
-# Logs d'un service spécifique
-docker-compose logs -f frontend
-```
-
-## 🛠️ Commandes Utiles
-
-```bash
-# Démarrer l'infrastructure
-docker-compose up -d
-
-# Redémarrer un service
-docker-compose restart service-name
-
-# Voir l'état des services
-docker-compose ps
-
-# Rebuild et redémarrer
-docker-compose up -d --build
-
-# Arrêter l'infrastructure
-docker-compose down
-
-# Nettoyer complètement
-docker-compose down -v --remove-orphans
-```
-
-## 🔄 Ajout de Nouveaux Services
-
-Pour ajouter un nouveau service à l'architecture :
-
-1. **Cloner le repository** à la racine du projet
-2. **Ajouter le service** dans `docker-compose.yml` avec les labels Traefik appropriés
-3. **Configurer Consul** si nécessaire dans `consul/config/`
-4. **Redémarrer** l'infrastructure : `docker-compose up -d`
-
-Exemple de configuration de service :
-```yaml
-nouveau-service:
-  build: ./nouveau-service
-  labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.nouveau.rule=Host(`nouveau.localhost`)"
-    - "traefik.http.services.nouveau.loadbalancer.server.port=3000"
-  networks:
-    - net
-```
-
-## 🤝 Contribution
-
-1. Fork le repository
-2. Créer une branche feature
-3. Ajouter/modifier la configuration d'infrastructure
-4. Tester avec `docker-compose up -d`
-5. Créer une Pull Request
+Cette orchestration fournit ainsi une base prête à l’emploi pour la plateforme TUVCB.
 
 ## 📞 Support
 
